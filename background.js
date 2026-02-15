@@ -342,70 +342,28 @@ async function fetchTikTokProfileData(username, directProfilePicUrl) {
   const profileUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&username=${username}`;
   const emailUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&type=domain&username=${username}`;
   const fullDataUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&username=${username}&type=full`;
-  
-  const options = {
-    method: "GET",
-  };
+  const options = { method: "GET" };
+
+  // Start all requests in parallel immediately
+  const emailPromise = fetch(emailUrl, options)
+    .then(res => res.ok ? res.json() : null)
+    .catch(err => { console.error("TikTok email fetch error:", err); return null; });
+
+  const fullDataPromise = fetch(fullDataUrl, options)
+    .then(res => res.ok ? res.json() : null)
+    .catch(err => { console.error("TikTok full data fetch error:", err); return null; });
 
   try {
-    const [profileResponse, emailResponse, fullDataResponse] = await Promise.all([
-      fetch(profileUrl, options),
-      fetch(emailUrl, options).catch((err) => {
-        console.error("TikTok email fetch error:", err);
-        return null;
-      }),
-      fetch(fullDataUrl, options).catch((err) => {
-        console.error("TikTok full data fetch error:", err);
-        return null;
-      }),
-    ]);
-
-    let historicalPerf = null;
-    if (fullDataResponse && fullDataResponse.ok) {
-      try {
-        const fullDataResult = await fullDataResponse.json();
-        console.log("TikTok Full Data Response:", fullDataResult);
-        if (fullDataResult?.shadow_ban_risk_assessment?.result?.detailed_metrics?.historical_performance) {
-          historicalPerf = fullDataResult.shadow_ban_risk_assessment.result.detailed_metrics.historical_performance;
-        }
-      } catch (e) {
-        console.error("Error parsing TikTok full data JSON:", e);
-      }
+    const profileResponse = await fetch(profileUrl, options);
+    if (!profileResponse.ok) {
+      throw new Error(`TikTok API request failed: ${profileResponse.status}`);
     }
-
-    if (!profileResponse.ok) throw new Error(`TikTok API request failed: ${profileResponse.status}`);
-    
     const result = await profileResponse.json();
     console.log(result);
     const profile = result.profile;
     const stats = result.stats;
 
     if (!profile || !stats) throw new Error("Invalid TikTok API response structure");
-    
-    let email = "N/A";
-    if (emailResponse && emailResponse.ok) {
-      try {
-        const emailResult = await emailResponse.json();
-        console.log("TikTok Email API Response:", emailResult);
-        if (emailResult.email) {
-          email = emailResult.email;
-        } else if (emailResult.data && emailResult.data.email) {
-          email = emailResult.data.email;
-        }
-      } catch (e) {
-        console.error("Error parsing TikTok email JSON:", e);
-      }
-    }
-
-    // Fallback: Extract email from bio if not found in API
-    if (email === "N/A" && profile.About) {
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
-      const match = profile.About.match(emailRegex);
-      if (match) {
-        email = match[0];
-      }
-    }
-    console.log("Final TikTok Email:", email);
 
     const rawFollowers = stats.Followers || stats.followers;
     const followers = rawFollowers ? parseInt(String(rawFollowers).replace(/,/g, ""), 10) : 0;
@@ -413,17 +371,18 @@ async function fetchTikTokProfileData(username, directProfilePicUrl) {
 
     const profileData = {
       username: uniqueId,
-      email: email,
+      email: "Loading...",
       followers_count: followers,
-      following_count: 0,
-      total_likes: 0,
-      total_videos: 0,
-      average_likes: historicalPerf?.avg_likes,
-      average_comments: historicalPerf?.avg_comments,
-      average_views: historicalPerf?.avg_views,
       location: profile.Country || "N/A",
-      engagement_rate: historicalPerf?.engagement_rate,
-      profilePicUrl: directProfilePicUrl || profile["Avatar URL"]
+      profilePicUrl: directProfilePicUrl || profile["Avatar URL"],
+      // Stats will be loaded separately
+      engagement_rate: null,
+      average_likes: null,
+      average_comments: null,
+      average_views: null,
+      following_count: 0, // Keep for consistency
+      total_likes: 0, // Keep for consistency
+      total_videos: 0, // Keep for consistency
     };
 
     chrome.runtime.sendMessage({ 
@@ -431,8 +390,65 @@ async function fetchTikTokProfileData(username, directProfilePicUrl) {
       data: { ...profileData, profileUrl: `https://www.tiktok.com/@${uniqueId}` } 
     });
 
+    // Process extra data using the promises started earlier
+    processTikTokExtraData(emailPromise, fullDataPromise, profile.About);
+
   } catch (error) {
     console.error("Error fetching TikTok profile:", error);
     chrome.runtime.sendMessage({ message: "profile_data_error", error: "Failed to fetch TikTok data." });
+  }
+}
+
+async function processTikTokExtraData(emailPromise, fullDataPromise, bio) {
+  // Handle Email
+  try {
+    const emailResult = await emailPromise;
+    let email = "N/A";
+
+    if (emailResult) {
+      console.log("TikTok Email API Response:", emailResult);
+      if (emailResult.email) {
+        email = emailResult.email;
+      } else if (emailResult.data && emailResult.data.email) {
+        email = emailResult.data.email;
+      }
+    }
+
+    if (email === "N/A" && bio) {
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+      const match = bio.match(emailRegex);
+      if (match) {
+        email = match[0];
+      }
+    }
+    console.log("Final TikTok Email:", email);
+    chrome.runtime.sendMessage({ message: "tiktok_email_data", data: { email } });
+  } catch (e) {
+    console.error("Error processing email:", e);
+  }
+
+  // Handle Stats
+  try {
+    const fullDataResult = await fullDataPromise;
+    if (fullDataResult) {
+      console.log("TikTok Full Data Response:", fullDataResult);
+      if (fullDataResult?.shadow_ban_risk_assessment?.result?.detailed_metrics?.historical_performance) {
+        const historicalPerf = fullDataResult.shadow_ban_risk_assessment.result.detailed_metrics.historical_performance;
+        const statsData = {
+          average_likes: historicalPerf?.avg_likes,
+          average_comments: historicalPerf?.avg_comments,
+          average_views: historicalPerf?.avg_views,
+          engagement_rate: historicalPerf?.engagement_rate,
+        };
+        chrome.runtime.sendMessage({ message: "tiktok_stats_data", data: statsData });
+      } else {
+        chrome.runtime.sendMessage({ message: "tiktok_stats_error", error: "Stats unavailable" });
+      }
+    } else {
+      chrome.runtime.sendMessage({ message: "tiktok_stats_error", error: "Failed to fetch engagement stats." });
+    }
+  } catch (e) {
+    console.error("Error parsing TikTok full data JSON:", e);
+    chrome.runtime.sendMessage({ message: "tiktok_stats_error", error: "Failed to process engagement stats." });
   }
 }

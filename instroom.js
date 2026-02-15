@@ -65,11 +65,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function displayTikTokData(data) {
     displayCommonProfileData(data);
     followersSpan.textContent = formatNumber(data.followers_count);
-
-    engagementRateSpan.textContent = data.engagement_rate || "N/A";
-    averageLikesSpan.textContent = data.average_likes ? formatNumber(data.average_likes) : "N/A";
-    averageCommentsSpan.textContent = data.average_comments ? formatNumber(data.average_comments) : "N/A";
-    averageReelPlaysSpan.textContent = data.average_views ? formatNumber(data.average_views) : "N/A";
+    // Only update if data is provided, otherwise leave spinner from initial load
+    if (data.engagement_rate) {
+      engagementRateSpan.textContent = data.engagement_rate;
+    }
+    if (data.average_likes) {
+      averageLikesSpan.textContent = formatNumber(data.average_likes);
+    }
+    if (data.average_comments) {
+      averageCommentsSpan.textContent = formatNumber(data.average_comments);
+    }
+    if (data.average_views) {
+      averageReelPlaysSpan.textContent = formatNumber(data.average_views);
+    }
   }
 
 function displayPostStats(data) {
@@ -198,6 +206,22 @@ function displayPostStats(data) {
       displayPostStats({ totalLikes: "Error", totalComments: "Error" });
     } else if (request.message === "reels_stats_data") {
       displayReelsStats(request.data);
+    } else if (request.message === "tiktok_email_data") {
+      if (request.data && request.data.email) {
+        emailSpan.textContent = request.data.email;
+      }
+    } else if (request.message === "tiktok_stats_data") {
+      const data = request.data;
+      engagementRateSpan.textContent = data.engagement_rate || "N/A";
+      averageLikesSpan.textContent = data.average_likes ? formatNumber(data.average_likes) : "N/A";
+      averageCommentsSpan.textContent = data.average_comments ? formatNumber(data.average_comments) : "N/A";
+      averageReelPlaysSpan.textContent = data.average_views ? formatNumber(data.average_views) : "N/A";
+    } else if (request.message === "tiktok_stats_error") {
+      console.error("Error fetching tiktok stats:", request.error);
+      engagementRateSpan.textContent = "Error";
+      averageLikesSpan.textContent = "Error";
+      averageCommentsSpan.textContent = "Error";
+      averageReelPlaysSpan.textContent = "Error";
     } else if (request.message === "usage_limit_reached") {
       displayError(request.error);
       profileSection.innerHTML = `
