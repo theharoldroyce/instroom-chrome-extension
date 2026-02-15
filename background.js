@@ -40,7 +40,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
       }
 
       if (usageCount >= MAX_USAGE) {
-        chrome.runtime.sendMessage({
+        const tabId = sender.tab.id;
+        chrome.tabs.sendMessage(tabId, {
           message: "usage_limit_reached",
           error: "You have reached your monthly usage limit.",
           remaining: 0,
@@ -52,7 +53,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
       usageCount++;
       chrome.storage.local.set({ usageCount: usageCount }, () => {
         const remaining = MAX_USAGE - usageCount;
-        chrome.runtime.sendMessage({ message: "remaining_credits", remaining: remaining });
+        const tabId = sender.tab.id;
+        chrome.tabs.sendMessage(tabId, { message: "remaining_credits", remaining: remaining });
 
         const profileUrl = request.url;
         const username = extractUsernameFromUrl(profileUrl);
@@ -60,15 +62,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
 
         if (username) {
           if (profileUrl.includes("tiktok.com")) {
-            fetchTikTokProfileData(username, request.profilePicUrl);
+            fetchTikTokProfileData(username, request.profilePicUrl, tabId);
           } else {
-            fetchInstagramProfileData(username, request.profilePicUrl); // Pass the direct image URL
-            fetchInstagramPostStats(username);
-            fetchInstagramReelsStats(username);
+            fetchInstagramProfileData(username, request.profilePicUrl, tabId); // Pass the direct image URL
+            fetchInstagramPostStats(username, tabId);
+            fetchInstagramReelsStats(username, tabId);
           }
         } else {
           console.error("Invalid profile URL:", profileUrl);
-          chrome.runtime.sendMessage({
+          chrome.tabs.sendMessage(tabId, {
             message: "profile_data_error",
             error: "Invalid profile URL.",
           });
@@ -77,22 +79,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
     });
     return true; // Return true to indicate you will send a response asynchronously.
   } else if (request.message === "get_post_stats") {
+    const tabId = sender.tab.id;
     if (request.username) {
-      fetchInstagramPostStats(request.username);
+      fetchInstagramPostStats(request.username, tabId);
     } else {
       console.error("Username not available for post stats.");
-      chrome.runtime.sendMessage({
+      chrome.tabs.sendMessage(tabId, {
         message: "post_stats_error",
         error: "Could not retrieve username.",
       });
     }
     return true; // Also indicate async response for this message type.
   } else if (request.message === "get_reels_stats") {
+    const tabId = sender.tab.id;
     if (request.username) {
-      fetchInstagramReelsStats(request.username);
+      fetchInstagramReelsStats(request.username, tabId);
     } else {
       console.error("Username not available for reels stats.");
-      chrome.runtime.sendMessage({
+      chrome.tabs.sendMessage(tabId, {
         message: "reels_stats_error",
         error: "Could not retrieve username.",
       });
@@ -115,7 +119,7 @@ function extractUsernameFromUrl(profileUrl) {
   return null;
 }
 
-async function fetchInstagramProfileData(username, directProfilePicUrl) {
+async function fetchInstagramProfileData(username, directProfilePicUrl, tabId) {
   const infoUrl = `https://instagram-social-api.p.rapidapi.com/v1/info?username_or_id_or_url=${username}`;
   const aboutUrl = `https://instagram-social-api.p.rapidapi.com/v1/info_about?username_or_id_or_url=${username}`;
 
@@ -169,18 +173,18 @@ async function fetchInstagramProfileData(username, directProfilePicUrl) {
       profileUrl = `https://www.instagram.com/${profileData.username}/`;
     }
 
-    chrome.runtime.sendMessage({ message: "profile_data", data: { ...profileData, profilePicUrl: finalProfilePicUrl, profileUrl } });
+    chrome.tabs.sendMessage(tabId, { message: "profile_data", data: { ...profileData, profilePicUrl: finalProfilePicUrl, profileUrl } });
 
   } catch (error) {
     console.error("Error fetching profile data:", error);
-    chrome.runtime.sendMessage({
+    chrome.tabs.sendMessage(tabId, {
       message: "profile_data_error",
       error: "Failed to fetch profile data.",
     });
   }
 }
 
-async function fetchInstagramPostStats(username) {
+async function fetchInstagramPostStats(username, tabId) {
   const url = `https://instagram-social-api.p.rapidapi.com/v1/posts?username_or_id_or_url=${username}`;
   const options = {
     method: "GET",
@@ -219,7 +223,7 @@ async function fetchInstagramPostStats(username) {
       const totalLikes = last12Posts.reduce((sum, post) => sum + (post.like_count || 0), 0);
       const totalComments = last12Posts.reduce((sum, post) => sum + (post.comment_count || 0), 0);
       
-      chrome.runtime.sendMessage({
+      chrome.tabs.sendMessage(tabId, {
         message: "post_stats_data",
         data: { totalLikes, totalComments },
       });
@@ -229,14 +233,14 @@ async function fetchInstagramPostStats(username) {
     }
   } catch (error) {
     console.error("Error fetching post stats:", error);
-    chrome.runtime.sendMessage({
+    chrome.tabs.sendMessage(tabId, {
       message: "post_stats_error",
       error: "Failed to fetch post stats.",
     });
   }
 }
 
-async function fetchInstagramReelsStats(username) {
+async function fetchInstagramReelsStats(username, tabId) {
   const url = `https://instagram-social-api.p.rapidapi.com/v1/reels?username_or_id_or_url=${username}`;
   const options = {
     method: "GET",
@@ -269,7 +273,7 @@ async function fetchInstagramReelsStats(username) {
         const totalPlays = filteredReels.reduce((sum, reel) => sum + (reel.play_count || 0), 0);
         const averagePlays = filteredReels.length > 0 ? (totalPlays / filteredReels.length) : 0;
         // Send reels count and average plays
-        chrome.runtime.sendMessage({ message: "reels_stats_data", data: { averagePlays: averagePlays.toFixed(0) } });
+        chrome.tabs.sendMessage(tabId, { message: "reels_stats_data", data: { averagePlays: averagePlays.toFixed(0) } });
         return;
       }
 
@@ -294,14 +298,14 @@ async function fetchInstagramReelsStats(username) {
       const averagePlays = reelsWithoutOutliers.length > 0 ? (totalPlays / reelsWithoutOutliers.length) : 0;
 
       // 4. Send the average play count
-      chrome.runtime.sendMessage({ message: "reels_stats_data", data: { averagePlays: averagePlays.toFixed(0) } });
+      chrome.tabs.sendMessage(tabId, { message: "reels_stats_data", data: { averagePlays: averagePlays.toFixed(0) } });
 
     } else {
       throw new Error("Invalid data in reels API response.");
     }
   } catch (error) {
     console.error("Error fetching reels stats:", error);
-    chrome.runtime.sendMessage({
+    chrome.tabs.sendMessage(tabId, {
       message: "reels_stats_error",
       error: "Failed to fetch reels stats.",
     });
@@ -338,7 +342,7 @@ function extractInstagramProfileData(infoData, aboutData) {
 
 // --- TIKTOK FUNCTIONS ---
 
-async function fetchTikTokProfileData(username, directProfilePicUrl) {
+async function fetchTikTokProfileData(username, directProfilePicUrl, tabId) {
   const profileUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&username=${username}`;
   const emailUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&type=domain&username=${username}`;
   const fullDataUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&username=${username}&type=full`;
@@ -385,21 +389,21 @@ async function fetchTikTokProfileData(username, directProfilePicUrl) {
       total_videos: 0, // Keep for consistency
     };
 
-    chrome.runtime.sendMessage({ 
+    chrome.tabs.sendMessage(tabId, { 
       message: "profile_data", 
       data: { ...profileData, profileUrl: `https://www.tiktok.com/@${uniqueId}` } 
     });
 
     // Process extra data using the promises started earlier
-    processTikTokExtraData(emailPromise, fullDataPromise, profile.About);
+    processTikTokExtraData(emailPromise, fullDataPromise, profile.About, tabId);
 
   } catch (error) {
     console.error("Error fetching TikTok profile:", error);
-    chrome.runtime.sendMessage({ message: "profile_data_error", error: "Failed to fetch TikTok data." });
+    chrome.tabs.sendMessage(tabId, { message: "profile_data_error", error: "Failed to fetch TikTok data." });
   }
 }
 
-async function processTikTokExtraData(emailPromise, fullDataPromise, bio) {
+async function processTikTokExtraData(emailPromise, fullDataPromise, bio, tabId) {
   // Handle Email
   try {
     const emailResult = await emailPromise;
@@ -422,7 +426,7 @@ async function processTikTokExtraData(emailPromise, fullDataPromise, bio) {
       }
     }
     console.log("Final TikTok Email:", email);
-    chrome.runtime.sendMessage({ message: "tiktok_email_data", data: { email } });
+    chrome.tabs.sendMessage(tabId, { message: "tiktok_email_data", data: { email } });
   } catch (e) {
     console.error("Error processing email:", e);
   }
@@ -440,15 +444,15 @@ async function processTikTokExtraData(emailPromise, fullDataPromise, bio) {
           average_views: historicalPerf?.avg_views,
           engagement_rate: historicalPerf?.engagement_rate,
         };
-        chrome.runtime.sendMessage({ message: "tiktok_stats_data", data: statsData });
+        chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_data", data: statsData });
       } else {
-        chrome.runtime.sendMessage({ message: "tiktok_stats_error", error: "Stats unavailable" });
+        chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Stats unavailable" });
       }
     } else {
-      chrome.runtime.sendMessage({ message: "tiktok_stats_error", error: "Failed to fetch engagement stats." });
+      chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Failed to fetch engagement stats." });
     }
   } catch (e) {
     console.error("Error parsing TikTok full data JSON:", e);
-    chrome.runtime.sendMessage({ message: "tiktok_stats_error", error: "Failed to process engagement stats." });
+    chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Failed to process engagement stats." });
   }
 }

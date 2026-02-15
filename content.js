@@ -40,13 +40,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const profilePicUrl = await getProfilePicUrlFromPage();
         const userId = getUserIdFromPage();
         const username = getUsernameFromUrl();
-        chrome.runtime.sendMessage({
+        const msg = {
           message: "profile_url",
           url: profileUrl,
           profilePicUrl: profilePicUrl,
           userId: userId,
           username: username,
-        });
+        };
+        
+        chrome.runtime.sendMessage(msg);
+
+        // Also forward to iframe immediately so it can show the username/pic while loading
+        const iframe = document.getElementById("instroom-sidebar-frame");
+        if (iframe) {
+            iframe.contentWindow.postMessage(msg, "*");
+        }
       })();
       return true; // Indicates that the response is sent asynchronously
     }
@@ -55,6 +63,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         lastUrl = request.url;
         handlePageChange();
       }
+    }
+
+    // Forward data messages from background to the iframe
+    const forwardMessages = [
+        "profile_data", "profile_data_error",
+        "post_stats_data", "post_stats_error",
+        "reels_stats_data", "reels_stats_error",
+        "tiktok_email_data", "tiktok_stats_data", "tiktok_stats_error",
+        "usage_limit_reached", "remaining_credits"
+    ];
+
+    if (forwardMessages.includes(request.message)) {
+        const iframe = document.getElementById("instroom-sidebar-frame");
+        if (iframe) {
+            iframe.contentWindow.postMessage(request, "*");
+        }
     }
   });
 

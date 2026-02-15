@@ -126,7 +126,10 @@ function displayPostStats(data) {
   }
 
   window.addEventListener("message", (event) => {
-    if (event.data && event.data.type === "refresh_sidebar") {
+    const request = event.data;
+    if (!request) return;
+
+    if (request.type === "refresh_sidebar") {
       loadingDiv.style.display = "block";
       profileDataDiv.style.display = "none";
       errorDiv.style.display = "none";
@@ -140,31 +143,7 @@ function displayPostStats(data) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.tabs.sendMessage(tabs[0].id, { message: "get_profile_url" });
       });
-    }
-  });
-
-  // On popup open, get credits and then trigger profile data fetch
-  chrome.storage.local.get(["usageCount", "lastReset"], (result) => {
-    const MAX_USAGE = 10;
-    let usageCount = result.usageCount || 0;
-    const remaining = MAX_USAGE - usageCount;
-    remainingCreditsSpan.textContent = remaining;
-
-    // Initialize spinners
-    const spinnerHtml = '<div class="spinner"></div>';
-    engagementRateSpan.innerHTML = spinnerHtml;
-    averageLikesSpan.innerHTML = spinnerHtml;
-    averageCommentsSpan.innerHTML = spinnerHtml;
-    averageReelPlaysSpan.innerHTML = spinnerHtml;
-
-    // Now, send a message to the content script to get the URL.
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { message: "get_profile_url" });
-    });
-  });
-
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.message === "profile_data") {
+    } else if (request.message === "profile_data") {
       console.log("Full data object received in popup:", request.data);
 
       loadingDiv.style.display = "none";
@@ -236,6 +215,26 @@ function displayPostStats(data) {
     } else if (request.message === "remaining_credits") {
       remainingCreditsSpan.textContent = request.remaining;
     }
+  });
+
+  // On popup open, get credits and then trigger profile data fetch
+  chrome.storage.local.get(["usageCount", "lastReset"], (result) => {
+    const MAX_USAGE = 10;
+    let usageCount = result.usageCount || 0;
+    const remaining = MAX_USAGE - usageCount;
+    remainingCreditsSpan.textContent = remaining;
+
+    // Initialize spinners
+    const spinnerHtml = '<div class="spinner"></div>';
+    engagementRateSpan.innerHTML = spinnerHtml;
+    averageLikesSpan.innerHTML = spinnerHtml;
+    averageCommentsSpan.innerHTML = spinnerHtml;
+    averageReelPlaysSpan.innerHTML = spinnerHtml;
+
+    // Now, send a message to the content script to get the URL.
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { message: "get_profile_url" });
+    });
   });
 
   const resizeObserver = new ResizeObserver(() => {
