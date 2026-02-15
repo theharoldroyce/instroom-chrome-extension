@@ -405,54 +405,60 @@ async function fetchTikTokProfileData(username, directProfilePicUrl, tabId) {
 
 async function processTikTokExtraData(emailPromise, fullDataPromise, bio, tabId) {
   // Handle Email
-  try {
-    const emailResult = await emailPromise;
-    let email = "N/A";
+  const processEmail = async () => {
+    try {
+      const emailResult = await emailPromise;
+      let email = "N/A";
 
-    if (emailResult) {
-      console.log("TikTok Email API Response:", emailResult);
-      if (emailResult.email) {
-        email = emailResult.email;
-      } else if (emailResult.data && emailResult.data.email) {
-        email = emailResult.data.email;
+      if (emailResult) {
+        console.log("TikTok Email API Response:", emailResult);
+        if (emailResult.email) {
+          email = emailResult.email;
+        } else if (emailResult.data && emailResult.data.email) {
+          email = emailResult.data.email;
+        }
       }
-    }
 
-    if (email === "N/A" && bio) {
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
-      const match = bio.match(emailRegex);
-      if (match) {
-        email = match[0];
+      if (email === "N/A" && bio) {
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+        const match = bio.match(emailRegex);
+        if (match) {
+          email = match[0];
+        }
       }
+      console.log("Final TikTok Email:", email);
+      chrome.tabs.sendMessage(tabId, { message: "tiktok_email_data", data: { email } });
+    } catch (e) {
+      console.error("Error processing email:", e);
     }
-    console.log("Final TikTok Email:", email);
-    chrome.tabs.sendMessage(tabId, { message: "tiktok_email_data", data: { email } });
-  } catch (e) {
-    console.error("Error processing email:", e);
-  }
+  };
 
   // Handle Stats
-  try {
-    const fullDataResult = await fullDataPromise;
-    if (fullDataResult) {
-      console.log("TikTok Full Data Response:", fullDataResult);
-      if (fullDataResult?.shadow_ban_risk_assessment?.result?.detailed_metrics?.historical_performance) {
-        const historicalPerf = fullDataResult.shadow_ban_risk_assessment.result.detailed_metrics.historical_performance;
-        const statsData = {
-          average_likes: historicalPerf?.avg_likes,
-          average_comments: historicalPerf?.avg_comments,
-          average_views: historicalPerf?.avg_views,
-          engagement_rate: historicalPerf?.engagement_rate,
-        };
-        chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_data", data: statsData });
+  const processStats = async () => {
+    try {
+      const fullDataResult = await fullDataPromise;
+      if (fullDataResult) {
+        console.log("TikTok Full Data Response:", fullDataResult);
+        if (fullDataResult?.shadow_ban_risk_assessment?.result?.detailed_metrics?.historical_performance) {
+          const historicalPerf = fullDataResult.shadow_ban_risk_assessment.result.detailed_metrics.historical_performance;
+          const statsData = {
+            average_likes: historicalPerf?.avg_likes,
+            average_comments: historicalPerf?.avg_comments,
+            average_views: historicalPerf?.avg_views,
+            engagement_rate: historicalPerf?.engagement_rate,
+          };
+          chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_data", data: statsData });
+        } else {
+          chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Stats unavailable" });
+        }
       } else {
-        chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Stats unavailable" });
+        chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Failed to fetch engagement stats." });
       }
-    } else {
-      chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Failed to fetch engagement stats." });
+    } catch (e) {
+      console.error("Error parsing TikTok full data JSON:", e);
+      chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Failed to process engagement stats." });
     }
-  } catch (e) {
-    console.error("Error parsing TikTok full data JSON:", e);
-    chrome.tabs.sendMessage(tabId, { message: "tiktok_stats_error", error: "Failed to process engagement stats." });
-  }
+  };
+
+  await Promise.all([processEmail(), processStats()]);
 }
