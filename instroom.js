@@ -66,11 +66,10 @@ document.addEventListener("DOMContentLoaded", () => {
     displayCommonProfileData(data);
     followersSpan.textContent = formatNumber(data.followers_count);
 
-    // For TikTok, these stats are not available from our current API
     engagementRateSpan.textContent = data.engagement_rate || "N/A";
     averageLikesSpan.textContent = data.average_likes ? formatNumber(data.average_likes) : "N/A";
-    averageCommentsSpan.textContent = "N/A";
-    averageReelPlaysSpan.textContent = "N/A";
+    averageCommentsSpan.textContent = data.average_comments ? formatNumber(data.average_comments) : "N/A";
+    averageReelPlaysSpan.textContent = data.average_views ? formatNumber(data.average_views) : "N/A";
   }
 
 function displayPostStats(data) {

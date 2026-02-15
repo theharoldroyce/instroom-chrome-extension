@@ -341,19 +341,37 @@ function extractInstagramProfileData(infoData, aboutData) {
 async function fetchTikTokProfileData(username, directProfilePicUrl) {
   const profileUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&username=${username}`;
   const emailUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&type=domain&username=${username}`;
+  const fullDataUrl = `${TIKTOK_HOST}/?key=${TIKTOK_KEY}&username=${username}&type=full`;
   
   const options = {
     method: "GET",
   };
 
   try {
-    const [profileResponse, emailResponse] = await Promise.all([
+    const [profileResponse, emailResponse, fullDataResponse] = await Promise.all([
       fetch(profileUrl, options),
       fetch(emailUrl, options).catch((err) => {
         console.error("TikTok email fetch error:", err);
         return null;
       }),
+      fetch(fullDataUrl, options).catch((err) => {
+        console.error("TikTok full data fetch error:", err);
+        return null;
+      }),
     ]);
+
+    let historicalPerf = null;
+    if (fullDataResponse && fullDataResponse.ok) {
+      try {
+        const fullDataResult = await fullDataResponse.json();
+        console.log("TikTok Full Data Response:", fullDataResult);
+        if (fullDataResult?.shadow_ban_risk_assessment?.result?.detailed_metrics?.historical_performance) {
+          historicalPerf = fullDataResult.shadow_ban_risk_assessment.result.detailed_metrics.historical_performance;
+        }
+      } catch (e) {
+        console.error("Error parsing TikTok full data JSON:", e);
+      }
+    }
 
     if (!profileResponse.ok) throw new Error(`TikTok API request failed: ${profileResponse.status}`);
     
@@ -400,9 +418,11 @@ async function fetchTikTokProfileData(username, directProfilePicUrl) {
       following_count: 0,
       total_likes: 0,
       total_videos: 0,
-      average_likes: 0,
+      average_likes: historicalPerf?.avg_likes,
+      average_comments: historicalPerf?.avg_comments,
+      average_views: historicalPerf?.avg_views,
       location: profile.Country || "N/A",
-      engagement_rate: "N/A",
+      engagement_rate: historicalPerf?.engagement_rate,
       profilePicUrl: directProfilePicUrl || profile["Avatar URL"]
     };
 
