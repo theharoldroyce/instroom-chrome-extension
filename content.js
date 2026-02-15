@@ -113,10 +113,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         iframe.src = chrome.runtime.getURL("instroom.html");
         iframe.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
-        width: 400px;
-        height: 650px;
+        top: 15px;
+        right: 15px;
+        width: 340px;
+        max-width: calc(100vw - 30px);
+        height: 600px;
         border: none;
         z-index: 2147483647;
         border-radius: 16px;
