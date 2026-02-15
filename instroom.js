@@ -18,6 +18,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let followersCountForEngagement = null; // Store followers count for engagement calculation
   let cachedPostStats = null; // Store post stats if they arrive before profile data
 
+  // Initialize Bootstrap tooltips
+  if (typeof bootstrap !== 'undefined') {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+      new bootstrap.Tooltip(el);
+    });
+  }
+
   function formatNumber(num) {
     if (typeof num !== 'number' || isNaN(num)) {
       return "N/A";

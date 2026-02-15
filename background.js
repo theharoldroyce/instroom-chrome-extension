@@ -46,12 +46,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
           error: "You have reached your monthly usage limit.",
           remaining: 0,
         });
+        sendResponse({ error: "Usage limit reached" });
         return; // Stop execution
       }
 
       // Increment usage count
       usageCount++;
       chrome.storage.local.set({ usageCount: usageCount }, () => {
+        sendResponse({ success: true });
         const remaining = MAX_USAGE - usageCount;
         const tabId = sender.tab.id;
         chrome.tabs.sendMessage(tabId, { message: "remaining_credits", remaining: remaining });
@@ -81,25 +83,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => { // Mak
   } else if (request.message === "get_post_stats") {
     const tabId = sender.tab.id;
     if (request.username) {
-      fetchInstagramPostStats(request.username, tabId);
+      fetchInstagramPostStats(request.username, tabId).finally(() => sendResponse({ success: true }));
     } else {
       console.error("Username not available for post stats.");
       chrome.tabs.sendMessage(tabId, {
         message: "post_stats_error",
         error: "Could not retrieve username.",
       });
+      sendResponse({ error: "Username not available" });
     }
     return true; // Also indicate async response for this message type.
   } else if (request.message === "get_reels_stats") {
     const tabId = sender.tab.id;
     if (request.username) {
-      fetchInstagramReelsStats(request.username, tabId);
+      fetchInstagramReelsStats(request.username, tabId).finally(() => sendResponse({ success: true }));
     } else {
       console.error("Username not available for reels stats.");
       chrome.tabs.sendMessage(tabId, {
         message: "reels_stats_error",
         error: "Could not retrieve username.",
       });
+      sendResponse({ error: "Username not available" });
     }
     return true;
   }

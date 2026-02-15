@@ -6,14 +6,10 @@
 
     <!-- Bootstrap for tooltips (optional) -->
     <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      href="bootstrap.min.css"
       rel="stylesheet"
     />
 
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
-    >
     <style>
       .title, .username {
         color: #22C55E; /* Or keep green if you prefer */
@@ -59,9 +55,10 @@
           <div class="metric-item">
             <span class="metric-label">
               Engagement Rate
-              <i class="bi bi-info-circle ms-1"
-                 data-bs-toggle="tooltip"
-                 title="Engagement Rate = (Total interactions ÷ Followers) × 100"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-info-circle ms-1" viewBox="0 0 16 16" data-bs-toggle="tooltip" title="Engagement Rate = (Total interactions ÷ Followers) × 100">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+              </svg>
             </span>
             <span class="metric-value highlight" id="engagement-rate"></span>
           </div>
@@ -69,9 +66,10 @@
           <div class="metric-item">
             <span class="metric-label">
               Avg. Likes
-              <i class="bi bi-info-circle ms-1"
-                 data-bs-toggle="tooltip"
-                 title="Average likes on recent posts."></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-info-circle ms-1" viewBox="0 0 16 16" data-bs-toggle="tooltip" title="Average likes on recent posts.">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+              </svg>
             </span>
             <span class="metric-value highlight" id="average-likes"></span>
           </div>
@@ -79,9 +77,10 @@
           <div class="metric-item">
             <span class="metric-label">
               Avg. Comments
-              <i class="bi bi-info-circle ms-1"
-                 data-bs-toggle="tooltip"
-                 title="Average comments on recent posts."></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-info-circle ms-1" viewBox="0 0 16 16" data-bs-toggle="tooltip" title="Average comments on recent posts.">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+              </svg>
             </span>
             <span class="metric-value highlight" id="average-comments"></span>
           </div>
@@ -89,9 +88,10 @@
           <div class="metric-item">
             <span class="metric-label">
               Avg. Video Views
-              <i class="bi bi-info-circle ms-1"
-                 data-bs-toggle="tooltip"
-                 title="Average Reel/Video views."></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-info-circle ms-1" viewBox="0 0 16 16" data-bs-toggle="tooltip" title="Average Reel/Video views.">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+              </svg>
             </span>
             <span class="metric-value highlight" id="average-reel-plays"></span>
           </div>
@@ -111,13 +111,7 @@
     </div>
 
     <!-- Bootstrap tooltips -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-        new bootstrap.Tooltip(el);
-      });
-    </script>
-
+    <script src="bootstrap.bundle.min.js"></script>
     <script src="instroom.js"></script>
 
   </body>

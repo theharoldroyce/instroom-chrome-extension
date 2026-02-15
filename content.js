@@ -55,6 +55,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (iframe) {
             iframe.contentWindow.postMessage(msg, "*");
         }
+        sendResponse({ success: true });
       })();
       return true; // Indicates that the response is sent asynchronously
     }
