@@ -201,6 +201,25 @@ html, body {
     font-weight: 600;
 }
 
+/* Separator for inline metrics like Remaining Credits */
+.metric-separator {
+    margin: 0;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* Container for remaining/total credits */
+.credits {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+
+/* green separator variant */
+.metric-separator.separator-green {
+    color: var(--brand);
+}
+
 /* LOADING / ERROR */
 .loading, .error {
     text-align: center;
