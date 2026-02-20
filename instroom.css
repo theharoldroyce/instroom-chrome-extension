@@ -168,3 +168,43 @@ html, body {
     from { transform: rotate(0); }
     to { transform: rotate(360deg); }
 }
+
+/* EMAIL COPY BUTTON */
+.email-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.copy-btn {
+    background: none;
+    border: none;
+    padding: 4px 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.copy-btn:hover {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--brand);
+    opacity: 1;
+}
+
+.copy-btn:active {
+    transform: scale(0.95);
+}
+
+.copy-icon {
+    transition: opacity 0.3s ease;
+}
+
+.check-icon {
+    transition: opacity 0.3s ease;
+    color: var(--brand);
+}

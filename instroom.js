@@ -249,4 +249,51 @@ function displayPostStats(data) {
     window.parent.postMessage({ type: "resize_sidebar", height: height }, "*");
   });
   resizeObserver.observe(document.body);
+
+  // Copy to clipboard functionality
+  const copyBtn = document.getElementById("copy-email-btn");
+  const emailSpanForCopy = document.getElementById("email");
+  let copyTimeout;
+
+  if (copyBtn) {
+    copyBtn.addEventListener("click", () => {
+      const emailText = emailSpanForCopy.textContent.trim();
+
+      if (!emailText || emailText === "N/A") {
+        return;
+      }
+
+      try {
+        // Create a temporary textarea element
+        const textarea = document.createElement("textarea");
+        textarea.value = emailText;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+
+        // Select and copy
+        textarea.select();
+        document.execCommand("copy");
+
+        // Remove temporary element
+        document.body.removeChild(textarea);
+
+        // Show checkmark
+        const copyIcon = copyBtn.querySelector(".copy-icon");
+        const checkIcon = copyBtn.querySelector(".check-icon");
+
+        copyIcon.style.display = "none";
+        checkIcon.style.display = "block";
+
+        // Reset after 1.5 seconds
+        clearTimeout(copyTimeout);
+        copyTimeout = setTimeout(() => {
+          copyIcon.style.display = "block";
+          checkIcon.style.display = "none";
+        }, 1500);
+      } catch (err) {
+        console.error("Failed to copy email:", err);
+      }
+    });
+  }
 });
