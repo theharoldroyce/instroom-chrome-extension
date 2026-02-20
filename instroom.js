@@ -53,6 +53,45 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Minimize / restore popup
+  const minimizeBtn = document.getElementById("minimize-btn");
+  const popupContainer = document.querySelector(".popup-container");
+
+  function applyMinimizedState(minimized) {
+    if (!popupContainer || !minimizeBtn) return;
+    if (minimized) {
+      popupContainer.classList.add("minimized");
+      minimizeBtn.title = "Restore";
+    } else {
+      popupContainer.classList.remove("minimized");
+      minimizeBtn.title = "Minimize";
+    }
+    // notify parent about size change (sidebar/resizer)
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ type: "resize_sidebar", height: height }, "*");
+    try {
+      localStorage.setItem("instroom_minimized", minimized ? "1" : "0");
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+
+  if (minimizeBtn && popupContainer) {
+    // restore state from localStorage
+    let initialMin = false;
+    try {
+      initialMin = localStorage.getItem("instroom_minimized") === "1";
+    } catch (e) {
+      initialMin = false;
+    }
+    applyMinimizedState(initialMin);
+
+    minimizeBtn.addEventListener("click", () => {
+      const isMin = popupContainer.classList.contains("minimized");
+      applyMinimizedState(!isMin);
+    });
+  }
+
   function displayInstagramData(data) {
     displayCommonProfileData(data);
     followersSpan.textContent = formatNumber(data.followers_count);
