@@ -6,7 +6,6 @@ const RAPIDAPI_HOST = "instagram-social-api.p.rapidapi.com";
 
 const TIKTOK_HOST = "https://api.omar-thing.site";
 const TIKTOK_KEY = "vS2LUxpdqGJX8agO";
-let currentUserId = null;
 
 // Listen for URL updates to handle navigation
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -367,7 +366,7 @@ async function fetchTikTokProfileData(username, directProfilePicUrl, tabId) {
       throw new Error(`TikTok API request failed: ${profileResponse.status}`);
     }
     const result = await profileResponse.json();
-    console.log(result);
+    console.info(result);
     const profile = result.profile;
     const stats = result.stats;
 
@@ -383,7 +382,6 @@ async function fetchTikTokProfileData(username, directProfilePicUrl, tabId) {
       followers_count: followers,
       location: profile.Country || "N/A",
       profilePicUrl: directProfilePicUrl || profile["Avatar URL"],
-      // Stats will be loaded separately
       engagement_rate: null,
       average_likes: null,
       average_comments: null,
@@ -415,7 +413,7 @@ async function processTikTokExtraData(emailPromise, fullDataPromise, bio, tabId)
       let email = "N/A";
 
       if (emailResult) {
-        console.log("TikTok Email API Response:", emailResult);
+        console.info("TikTok Email API Response:", emailResult);
         if (emailResult.email) {
           email = emailResult.email;
         } else if (emailResult.data && emailResult.data.email) {
@@ -430,7 +428,7 @@ async function processTikTokExtraData(emailPromise, fullDataPromise, bio, tabId)
           email = match[0];
         }
       }
-      console.log("Final TikTok Email:", email);
+      console.info("Final TikTok Email:", email);
       chrome.tabs.sendMessage(tabId, { message: "tiktok_email_data", data: { email } });
     } catch (e) {
       console.error("Error processing email:", e);
@@ -442,7 +440,7 @@ async function processTikTokExtraData(emailPromise, fullDataPromise, bio, tabId)
     try {
       const fullDataResult = await fullDataPromise;
       if (fullDataResult) {
-        console.log("TikTok Full Data Response:", fullDataResult);
+        console.info("TikTok Full Data Response:", fullDataResult);
         if (fullDataResult?.shadow_ban_risk_assessment?.result?.detailed_metrics?.historical_performance) {
           const historicalPerf = fullDataResult.shadow_ban_risk_assessment.result.detailed_metrics.historical_performance;
           const statsData = {

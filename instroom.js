@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const averageCommentsSpan = document.getElementById("average-comments");
   const averageReelPlaysSpan = document.getElementById("average-reel-plays");
   const remainingCreditsSpan = document.getElementById("remaining-credits");
-  const profileSection = document.querySelector(".profile-section");
+  const profileSection = document.querySelector(".profile-section") || document.getElementById("profile-data");
   const profilePicImg = document.getElementById("profile-pic");
 
   let followersCountForEngagement = null; // Store followers count for engagement calculation
@@ -190,7 +190,7 @@ function displayPostStats(data) {
         chrome.tabs.sendMessage(tabs[0].id, { message: "get_profile_url" });
       });
     } else if (request.message === "profile_data") {
-      console.log("Full data object received in popup:", request.data);
+      console.info("Full data object received in popup:", request.data);
 
       loadingDiv.style.display = "none";
       profileDataDiv.style.display = "block";
@@ -249,12 +249,14 @@ function displayPostStats(data) {
       averageReelPlaysSpan.textContent = "Error";
     } else if (request.message === "usage_limit_reached") {
       displayError(request.error);
-      profileSection.innerHTML = `
+      if (profileSection) {
+        profileSection.innerHTML = `
         <div class="no-credits-message">
           <p>You've reached your monthly credit limit. To continue using all features, please upgrade your plan:</p>
           <a href="https://instroom-landing-page.vercel.app/" target="_blank">Subscribe</a>
         </div>
       `;
+      }
       // Optionally, hide the profile data section
       profileDataDiv.style.display = "none";
 
@@ -265,7 +267,7 @@ function displayPostStats(data) {
 
   // On popup open, get credits and then trigger profile data fetch
   chrome.storage.local.get(["usageCount", "lastReset"], (result) => {
-    const MAX_USAGE = 10;
+    const MAX_USAGE = 1000;
     let usageCount = result.usageCount || 0;
     const remaining = MAX_USAGE - usageCount;
     remainingCreditsSpan.textContent = remaining;
