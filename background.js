@@ -1,5 +1,5 @@
 // background.js
-const RAILWAY_HOST = "https://apiinstroom-production.up.railway.app";
+const RAILWAY_HOST = "https://api.instroom.io";
 
 // Listen for URL updates to handle navigation
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
