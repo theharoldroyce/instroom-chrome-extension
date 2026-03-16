@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const username = request.username || extractUsernameFromUrl(request.url);
         if (username) {
           if (request.url.includes("tiktok.com")) {
-            fetchTikTokData(username, request.profilePicUrl, tabId);
+            fetchTikTokData(username, tabId);
           } else {
             fetchInstagramData(username, request.profilePicUrl, tabId);
           }
@@ -119,22 +119,20 @@ async function fetchInstagramData(username, directProfilePicUrl, tabId) {
 
 // --- TIKTOK ---
 
-async function fetchTikTokData(username, directProfilePicUrl, tabId) {
+async function fetchTikTokData(username, tabId) {
   try {
-    const response = await fetchWithTimeout(`${RAILWAY_HOST}/${username}/tiktok`);
+    const response = await fetch(`${RAILWAY_HOST}/${username}/tiktok`);
     if (!response.ok) throw new Error(`Status ${response.status}`);
     const result = await response.json();
-
-    const uniqueId = (result.username || username).replace(/^@/, "");
 
     chrome.tabs.sendMessage(tabId, {
       message: "tiktok_data",
       data: {
-        username: uniqueId,
+        username: (result.username || username).replace(/^@/, ""),
         email: result.email || "email not available",
         followers_count: parseInt(String(result.followers || "0").replace(/,/g, ""), 10),
         location: result.country || "N/A",
-        profilePicUrl: directProfilePicUrl || result.avatar,
+        profilePicUrl: result.avatar || null,
         engagement_rate: result.engagement_rate || "N/A",
         avg_likes: result.avg_hearts || "N/A",
         avg_comments: result.avg_comments || "N/A",

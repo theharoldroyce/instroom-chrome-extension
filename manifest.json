@@ -13,7 +13,11 @@
     "host_permissions": [
       "https://apiinstroom-production.up.railway.app/*",
       "https://*.cdninstagram.com/*",
-      "https://*.fbcdn.net/*"
+      "https://*.fbcdn.net/*",
+      "https://*.tiktokcdn.com/*",
+      "https://*.tiktokcdn-eu.com/*",
+      "https://*.tiktokcdn-us.com/*",
+      "https://*.tiktokv.com/*"
     ],
     "action": {
       "default_icon": {

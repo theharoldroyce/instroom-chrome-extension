@@ -27,7 +27,8 @@ function waitForElement(selector, fallbackSelector, timeoutMs = 3000) {
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.message === "get_profile_url") {
       (async () => {
-        const profilePicUrl = await getProfilePicUrlFromPage();
+        const isTikTok = window.location.hostname.includes("tiktok.com");
+        const profilePicUrl = isTikTok ? null : await getInstagramProfilePicUrl();
         const msg = {
           message: "profile_url",
           url: window.location.href,
@@ -167,21 +168,6 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return null;
   }
 
-  function getUserIdFromPage() {
-    try {
-      const metaTag = document.querySelector('meta[property="al:ios:url"]');
-      if (metaTag) {
-        const content = metaTag.getAttribute('content');
-        const match = content.match(/user\?id=(\d+)/);
-        if (match && match[1]) {
-          return match[1];
-        }
-      }
-    } catch (e) {
-      console.error("Error extracting user ID:", e);
-    }
-    return null;
-  }
 
   function isInstagramProfilePage() {
     const path = window.location.pathname;
@@ -225,19 +211,3 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     return null;
   }
 
-  function getTikTokProfilePicUrl() {
-    // Try immediately — no waiting. Railway API provides the avatar anyway.
-    const img = document.querySelector('img[class*="Avatar"]') ||
-                document.querySelector('span[shape="circle"] img');
-    return img ? img.src : null;
-  }
-
-  async function getProfilePicUrlFromPage() {
-    const hostname = window.location.hostname;
-    if (hostname.includes("instagram.com")) {
-      return await getInstagramProfilePicUrl();
-    } else if (hostname.includes("tiktok.com")) {
-      return getTikTokProfilePicUrl();
-    }
-    return null;
-  }
