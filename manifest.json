@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Instroom.io",
     "version": "1.0",
-    "description": "INSTROOM.io makes influencer management simple and efficient—get instant stats on any Instagram or TikTok profile, right in your browser.",
+    "description": "Get instant stats on any Instagram or TikTok profile",
     "permissions": [
       "activeTab",
       "storage",
