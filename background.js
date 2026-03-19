@@ -93,7 +93,7 @@ async function fetchWithTimeout(url, timeoutMs = 10000) {
 
 async function fetchInstagramData(username, directProfilePicUrl, tabId) {
   try {
-    const response = await fetchWithTimeout(`${RAILWAY_HOST}/${username}/instagram`);
+    const response = await fetchWithTimeout(`${RAILWAY_HOST}/v2/${username}/instagram`);
     if (!response.ok) throw new Error(`Status ${response.status}`);
     const result = await response.json();
 
@@ -104,7 +104,7 @@ async function fetchInstagramData(username, directProfilePicUrl, tabId) {
         email: result.email || "email not available",
         followers_count: result.followers || "N/A",
         location: result.location || "N/A",
-        profilePicUrl: directProfilePicUrl || result.photo,
+        profilePicUrl: directProfilePicUrl || result.photo || null,
         engagement_rate: result.engagement_rate || "N/A",
         avg_likes: result.avg_likes || "N/A",
         avg_comments: result.avg_comments || "N/A",
