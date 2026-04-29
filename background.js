@@ -1,5 +1,7 @@
 // background.js
-const RAILWAY_HOST = "https://api.instroom.io";
+const PRIMARY_HOST = "https://api.instroom.io";
+const FALLBACK_HOST = "https://apiinstroom-production.up.railway.app";
+const API_HOSTS = [PRIMARY_HOST, FALLBACK_HOST];
 
 // Listen for URL updates to handle navigation
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
@@ -89,11 +91,36 @@ async function fetchWithTimeout(url, timeoutMs = 10000) {
   }
 }
 
+// Try the primary API host first; on network/connection failure or 5xx, fall
+// back to the Railway host so the extension keeps working when the custom
+// domain is down.
+async function fetchApiWithFallback(path, timeoutMs = 10000) {
+  let lastError;
+  for (let i = 0; i < API_HOSTS.length; i++) {
+    const host = API_HOSTS[i];
+    const url = `${host}${path}`;
+    try {
+      const response = await fetchWithTimeout(url, timeoutMs);
+      if (response.ok) return response;
+      if (response.status >= 500 && i < API_HOSTS.length - 1) {
+        lastError = new Error(`Status ${response.status} from ${host}`);
+        console.warn(`Primary host ${host} returned ${response.status}, trying fallback.`);
+        continue;
+      }
+      return response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Request to ${host} failed (${err && err.message}); trying next host.`);
+    }
+  }
+  throw lastError || new Error("All API hosts failed");
+}
+
 // --- INSTAGRAM ---
 
 async function fetchInstagramData(username, directProfilePicUrl, tabId) {
   try {
-    const response = await fetchWithTimeout(`${RAILWAY_HOST}/v2/${username}/instagram`);
+    const response = await fetchApiWithFallback(`/v2/${username}/instagram`);
     if (!response.ok) throw new Error(`Status ${response.status}`);
     const result = await response.json();
 
@@ -121,7 +148,7 @@ async function fetchInstagramData(username, directProfilePicUrl, tabId) {
 
 async function fetchTikTokData(username, tabId) {
   try {
-    const response = await fetch(`${RAILWAY_HOST}/${username}/tiktok`);
+    const response = await fetchApiWithFallback(`/${username}/tiktok`);
     if (!response.ok) throw new Error(`Status ${response.status}`);
     const result = await response.json();
 

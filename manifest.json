@@ -12,6 +12,7 @@
     ],
     "host_permissions": [
       "https://api.instroom.io/*",
+      "https://apiinstroom-production.up.railway.app/*",
       "https://*.cdninstagram.com/*",
       "https://*.fbcdn.net/*",
       "https://*.tiktokcdn.com/*",
